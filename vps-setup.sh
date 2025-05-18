@@ -112,7 +112,15 @@ main() {
   echo "PermitRootLogin prohibit-password" | sudo tee -a /etc/ssh/sshd_config > /dev/null
 
   echo -e "${GREEN}Установка и настройка UFW...${RESET}"
-  sudo apt install -y ufw
+
+  if ! command -v ufw >/dev/null 2>&1; then
+    echo -e "${YELLOW}UFW не установлен. Устанавливаем...${RESET}"
+    sudo apt update
+    sudo apt install -y ufw
+  fi
+
+  sudo ufw --force reset
+
   sudo ufw default deny incoming
   sudo ufw default allow outgoing
   sudo ufw allow "$SSH_PORT"/tcp
@@ -136,10 +144,10 @@ main() {
   END_TIME=$(date +%s)
   RUNTIME=$((END_TIME - START_TIME))
 
-  echo -e "\n- ✅ ${GREEN}Настройка завершена за ${RUNTIME} секунд.${RESET}"
-echo -e "- 🔑 ${YELLOW}SSH приватный ключ:${RESET} ${GREEN}$KEY_FILE${RESET}"
-echo -e "- 📂 ${YELLOW}Используйте:${RESET} ${CYAN}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${RESET}"
-echo -e "- ⚠️ ${RED}Рекомендуется перезагрузить VPS.${RESET}\n"
+  echo -e "\n -✅ ${GREEN}Настройка завершена за ${RUNTIME} секунд.${RESET}"
+  echo -e " - 🔑 ${YELLOW}SSH приватный ключ:${RESET} ${GREEN}$KEY_FILE${RESET}"
+  echo -e " - 📂 ${YELLOW}Используйте:${RESET} ${CYAN}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${RESET}"
+  echo -e " - ⚠️ ${RED}Рекомендуется перезагрузить VPS.${RESET}\n"
 }
 
 main "$@"
