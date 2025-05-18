@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # VPS Initial Setup Script for Ubuntu 24.04
-# Version 1.1.1
+# Version 1.1.0
 
 RED="\033[31m"
 GREEN="\033[32m"
@@ -102,24 +102,6 @@ main() {
 
   sudo systemctl restart sshd
 
-  echo -e "${GREEN}Установка XanMod ядра с BBR3...${RESET}"
-  echo 'deb http://deb.xanmod.org releases main' | sudo tee /etc/apt/sources.list.d/xanmod-kernel.list
-  sudo apt install -y gpg wget gnupg
-  if wget -qO - https://dl.xanmod.org/gpg.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/xanmod.gpg > /dev/null; then
-    echo -e "${GREEN}Ключ XanMod добавлен.${RESET}"
-  else
-    echo -e "${RED}❌ Ошибка при добавлении GPG ключа XanMod.${RESET}"
-    exit 1
-  fi
-  sudo apt update && sudo apt install -y linux-xanmod-x64v4 || { echo -e "${RED}Ошибка установки XanMod${RESET}"; exit 1; }
-
-  echo -e "${GREEN}Включение BBR...${RESET}"
-  sudo tee /etc/sysctl.d/99-bbr.conf > /dev/null <<EOF
-net.core.default_qdisc=fq
-net.ipv4.tcp_congestion_control=bbr
-EOF
-  sudo sysctl --system
-
   echo -e "${GREEN}Установка и настройка UFW...${RESET}"
   sudo apt install -y ufw
   sudo ufw default deny incoming
@@ -140,7 +122,7 @@ EOF
   echo -e "${CYAN}🔑 Ваш SSH приватный ключ: ${YELLOW}$KEY_FILE${RESET}"
   echo -e "${CYAN}📂 Используйте ключ для подключения:${RESET}"
   echo -e "${YELLOW}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${RESET}"
-  echo -e "${GREEN}⚠️ Рекомендуется перезагрузить VPS для загрузки нового ядра.${RESET}"
+  echo -e "${GREEN}⚠️ Рекомендуется перезагрузить VPS.${RESET}"
 }
 
 main "$@"
