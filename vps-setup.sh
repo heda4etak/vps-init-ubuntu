@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # VPS Initial Setup Script for Ubuntu 24.04
-# Version 1.2.0
+# Version 1.3.0
 
 RED="\033[31m"
 GREEN="\033[32m"
@@ -33,14 +33,6 @@ print_banner() {
 EOF
   echo -e "${CYAN}${BOLD}          VPS Initial Setup Script for Ubuntu 24.04${RESET}"
   echo -e "${YELLOW}${BOLD}                      by Heda4etak - 2025${RESET}\n"
-}
-
-check_port() {
-  local port="$1"
-  if sudo ss -tln | grep -q ":${port} "; then
-    echo -e "${YELLOW}Порт ${port} уже занят. Выберите другой.${RESET}"
-    exit 1
-  fi
 }
 
 main() {
@@ -112,15 +104,11 @@ main() {
   echo "PermitRootLogin prohibit-password" | sudo tee -a /etc/ssh/sshd_config > /dev/null
 
   echo -e "${GREEN}Установка и настройка UFW...${RESET}"
-
-  if ! command -v ufw >/dev/null 2>&1; then
-    echo -e "${YELLOW}UFW не установлен. Устанавливаем...${RESET}"
-    sudo apt update
+  if ! command -v ufw &> /dev/null; then
     sudo apt install -y ufw
   fi
 
   sudo ufw --force reset
-
   sudo ufw default deny incoming
   sudo ufw default allow outgoing
   sudo ufw allow "$SSH_PORT"/tcp
@@ -148,6 +136,9 @@ main() {
   echo -e " - 🔑 ${YELLOW}SSH приватный ключ:${RESET} ${GREEN}$KEY_FILE${RESET}"
   echo -e " - 📂 ${YELLOW}Используйте:${RESET} ${CYAN}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${RESET}"
   echo -e " - ⚠️ ${RED}Рекомендуется перезагрузить VPS.${RESET}\n"
+
+  read -p "$(echo -e \"${YELLOW}Нажмите Enter для перезапуска системы или Ctrl+C для ручной перезагрузки позже.${RESET}\\n\")"
+  sudo reboot
 }
 
 main "$@"
