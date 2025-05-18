@@ -137,13 +137,13 @@ main() {
   RUNTIME=$((END_TIME - START_TIME))
 
   BOX_WIDTH=74
-echo -e "${GREEN}$(printf '%*s\n' "$BOX_WIDTH" '' | tr ' ' '#')${RESET}"
-printf "${GREEN}#%*s#\n" $((BOX_WIDTH - 2)) " ✅ Настройка завершена за ${RUNTIME} секунд."
-printf "${GREEN}# ${RESET}🔑 SSH приватный ключ: ${YELLOW}$KEY_FILE${RESET}${GREEN} %*s#\n" $((BOX_WIDTH - 28)) ""
-printf "${GREEN}#%*s#\n" $((BOX_WIDTH - 2)) " 📂 Используйте команду для подключения:"
-printf "${GREEN}# ${RESET}${YELLOW}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${RESET}${GREEN} %*s#\n" $((BOX_WIDTH - 44)) ""
-printf "${GREEN}#%*s#\n" $((BOX_WIDTH - 2)) " ⚠️ Рекомендуется перезагрузить VPS."
-echo -e "${GREEN}$(printf '%*s\n' "$BOX_WIDTH" '' | tr ' ' '#')${RESET}"
+  echo -e "\033[32m$(printf '%*s\n' "$BOX_WIDTH" '' | tr ' ' '#')\033[0m"
+  printf "\033[32m#%-*s#\n\033[0m" $((BOX_WIDTH - 2)) " ✅ Настройка завершена за ${RUNTIME} секунд."
+  printf "\033[32m# \033[0m🔑 SSH приватный ключ: \033[33m%-*s\033[32m%*s#\033[0m\n" 40 "$KEY_FILE" $((BOX_WIDTH - 44)) ""
+  printf "\033[32m#%-*s#\n\033[0m" $((BOX_WIDTH - 2)) " 📂 Используйте команду для подключения:"
+  printf "\033[32m# \033[0m\033[33m%-*s\033[32m%*s#\033[0m\n" 40 "ssh -i $KEY_FILE root@<IP> -p $SSH_PORT" $((BOX_WIDTH - 44)) ""
+  printf "\033[32m#%-*s#\n\033[0m" $((BOX_WIDTH - 2)) " ⚠️ Рекомендуется перезагрузить VPS."
+  echo -e "\033[32m$(printf '%*s\n' "$BOX_WIDTH" '' | tr ' ' '#')\033[0m"
 }
 
 main "$@"
