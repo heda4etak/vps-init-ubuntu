@@ -30,7 +30,7 @@ print_banner() {
 
 EOF
   echo -e "${CYAN}${BOLD}          VPS Initial Setup Script for Ubuntu 24.04${RESET}"
-  echo -e "${YELLOW}${BOLD}                      by heda4etak - 2025${RESET}\n"
+  echo -e "${YELLOW}${BOLD}                      by Heda4etak - 2025${RESET}\n"
 }
 
 check_port() {
@@ -43,10 +43,13 @@ check_port() {
 
 main() {
   ensure_sudo
-  print_banner
 
   echo -e "${GREEN}Обновление пакетов...${RESET}"
   sudo apt update && sudo apt upgrade -y
+  sleep 2
+  clear
+
+  print_banner
 
   while true; do
     read -rp "Введите новый порт для SSH (например, 2222): " SSH_PORT
