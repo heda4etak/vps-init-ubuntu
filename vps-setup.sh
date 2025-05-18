@@ -29,7 +29,6 @@ main() {
 
                                                  
     VPS Initial Setup Script for Ubuntu 24.04
-              by Heda4etak - 2025
 
 EOF
 
