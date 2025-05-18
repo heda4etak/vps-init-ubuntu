@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # VPS Initial Setup Script for Ubuntu 24.04
-# Version 1.1.0
+# Version 1.2.0
 
 RED="\033[31m"
 GREEN="\033[32m"
@@ -9,6 +9,8 @@ YELLOW="\033[33m"
 CYAN="\033[36m"
 BOLD="\033[1m"
 RESET="\033[0m"
+
+START_TIME=$(date +%s)
 
 ensure_sudo() {
   if ! sudo -v; then
@@ -18,7 +20,7 @@ ensure_sudo() {
 }
 
 print_banner() {
-  clear
+  echo -e "\033c"
   cat << "EOF"
 
 ██╗   ██╗██████╗ ███████╗      ███████╗███████╗████████╗██╗   ██╗██████╗ 
@@ -47,7 +49,7 @@ main() {
   print_banner
   echo -e "${GREEN}Обновление пакетов...${RESET}"
   sudo apt update && sudo apt upgrade -y
-  sleep 2
+  sleep 1
   print_banner
 
   while true; do
@@ -80,29 +82,34 @@ main() {
     echo -e "${YELLOW}SSH ключ уже существует: $KEY_FILE${RESET}"
   else
     echo -e "${GREEN}Генерация SSH ключа...${RESET}"
-    ssh-keygen -t rsa -b 4096 -N "" -f "$KEY_FILE"
+    if ! ssh-keygen -t rsa -b 4096 -N "" -f "$KEY_FILE"; then
+      echo -e "${RED}Ошибка генерации ключа.${RESET}"
+      rm -f "$KEY_FILE" "$KEY_FILE.pub"
+      exit 1
+    fi
   fi
 
+  PUB_KEY_CONTENT=$(cat "$KEY_FILE.pub")
   sudo mkdir -p /root/.ssh
   sudo touch /root/.ssh/authorized_keys
   sudo chmod 600 /root/.ssh/authorized_keys
-  PUB_KEY_CONTENT=$(cat "$KEY_FILE.pub")
-  sudo grep -qxF "$PUB_KEY_CONTENT" /root/.ssh/authorized_keys || sudo bash -c "echo '$PUB_KEY_CONTENT' >> /root/.ssh/authorized_keys"
+
+  if ! sudo grep -qxF "$PUB_KEY_CONTENT" /root/.ssh/authorized_keys; then
+    echo "$PUB_KEY_CONTENT" | sudo tee -a /root/.ssh/authorized_keys > /dev/null
+  fi
 
   echo -e "${GREEN}Настройка SSH...${RESET}"
   sudo sed -i "/^Port /d" /etc/ssh/sshd_config
-  echo "Port $SSH_PORT" | sudo tee -a /etc/ssh/sshd_config
+  echo "Port $SSH_PORT" | sudo tee -a /etc/ssh/sshd_config > /dev/null
 
   sudo sed -i "/^PasswordAuthentication /d" /etc/ssh/sshd_config
-  echo "PasswordAuthentication no" | sudo tee -a /etc/ssh/sshd_config
+  echo "PasswordAuthentication no" | sudo tee -a /etc/ssh/sshd_config > /dev/null
 
   sudo sed -i "/^PubkeyAuthentication /d" /etc/ssh/sshd_config
-  echo "PubkeyAuthentication yes" | sudo tee -a /etc/ssh/sshd_config
+  echo "PubkeyAuthentication yes" | sudo tee -a /etc/ssh/sshd_config > /dev/null
 
   sudo sed -i "/^PermitRootLogin /d" /etc/ssh/sshd_config
-  echo "PermitRootLogin prohibit-password" | sudo tee -a /etc/ssh/sshd_config
-
-  sudo systemctl restart sshd
+  echo "PermitRootLogin prohibit-password" | sudo tee -a /etc/ssh/sshd_config > /dev/null
 
   echo -e "${GREEN}Установка и настройка UFW...${RESET}"
   sudo apt install -y ufw
@@ -111,22 +118,31 @@ main() {
   sudo ufw allow "$SSH_PORT"/tcp
   sudo ufw allow 80/tcp
   sudo ufw allow 443/tcp
-  echo -e "${YELLOW}⚠️ Убедитесь, что SSH-порт $SSH_PORT открыт в UFW перед перезапуском SSH.${RESET}"
-  sleep 3
+
   if ! sudo ufw status | grep -q "Status: active"; then
+    echo -e "${YELLOW}⚠️  Включение UFW...${RESET}"
     sudo ufw --force enable
   fi
 
   echo -e "${CYAN}Перезапуск SSH...${RESET}"
   sudo systemctl restart sshd
 
-  BOX_WIDTH=70
+  sleep 1
+  if ! sudo systemctl is-active sshd >/dev/null; then
+    echo -e "${RED}Ошибка: SSH демон не запущен. Проверьте конфигурацию вручную.${RESET}"
+    exit 1
+  fi
+
+  END_TIME=$(date +%s)
+  RUNTIME=$((END_TIME - START_TIME))
+
+  BOX_WIDTH=74
   echo -e "${GREEN}$(printf '%*s\n' "$BOX_WIDTH" '' | tr ' ' '#')${RESET}"
-  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " $(echo -e "✅ Настройка завершена.") "
-  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " $(echo -e "🔑 Ваш SSH приватный ключ: ${YELLOW}$KEY_FILE${GREEN}") "
-  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " $(echo -e "📂 Используйте ключ для подключения:") "
-  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " $(echo -e "${YELLOW}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${GREEN}") "
-  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " ⚠️ Рекомендуется перезагрузить VPS. "
+  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " ✅ Настройка завершена за ${RUNTIME} секунд."
+  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " 🔑 Ваш SSH приватный ключ: ${YELLOW}$KEY_FILE${GREEN}"
+  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " 📂 Используйте команду для подключения:"
+  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " ${YELLOW}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${GREEN}"
+  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " ⚠️ Рекомендуется перезагрузить VPS."
   echo -e "${GREEN}$(printf '%*s\n' "$BOX_WIDTH" '' | tr ' ' '#')${RESET}"
 }
 
