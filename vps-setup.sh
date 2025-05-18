@@ -50,12 +50,20 @@ main() {
   print_banner
 
   # 1. Настройка SSH-порта
-  read -rp "Введите новый порт для SSH (например, 2222): " SSH_PORT
-  if ! [[ "$SSH_PORT" =~ ^[0-9]+$ ]] || [ "$SSH_PORT" -lt 1 ] || [ "$SSH_PORT" -gt 65535 ]; then
-    echo -e "${YELLOW}Неверный порт.${RESET}"
-    exit 1
-  fi
-  check_port "$SSH_PORT"
+  while true; do
+    read -rp "Введите новый порт для SSH (например, 2222): " SSH_PORT
+    if ! [[ "$SSH_PORT" =~ ^[0-9]+$ ]] || [ "$SSH_PORT" -lt 1 ] || [ "$SSH_PORT" -gt 65535 ]; then
+      echo -e "${YELLOW}Неверный порт. Введите число от 1 до 65535.${RESET}"
+      continue
+    fi
+
+    if sudo ss -tln | grep -q ":${SSH_PORT} "; then
+      echo -e "${YELLOW}Порт ${SSH_PORT} уже занят. Попробуйте другой.${RESET}"
+      continue
+    fi
+
+    break
+  done
 
   # 2. Ввод имени SSH-ключа
   read -rp "Введите имя SSH-ключа (без пути, например: id_rsa_myvps): " KEY_NAME
@@ -125,7 +133,7 @@ EOF
   fi
 
   echo -e "${CYAN}Перезапуск SSH...${RESET}"
-  sudo systemctl.restart sshd
+  sudo systemctl restart sshd
 
   # Финал
   echo -e "${GREEN}✅ Настройка завершена.${RESET}"
