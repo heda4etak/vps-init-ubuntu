@@ -120,11 +120,14 @@ main() {
   echo -e "${CYAN}Перезапуск SSH...${RESET}"
   sudo systemctl restart sshd
 
-  echo -e "${GREEN}✅ Настройка завершена.${RESET}"
-  echo -e "${CYAN}🔑 Ваш SSH приватный ключ: ${YELLOW}$KEY_FILE${RESET}"
-  echo -e "${CYAN}📂 Используйте ключ для подключения:${RESET}"
-  echo -e "${YELLOW}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${RESET}"
-  echo -e "${GREEN}⚠️ Рекомендуется перезагрузить VPS.${RESET}"
+  BOX_WIDTH=70
+  echo -e "${GREEN}$(printf '%*s\n' "$BOX_WIDTH" '' | tr ' ' '#')${RESET}"
+  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " $(echo -e "✅ Настройка завершена.") "
+  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " $(echo -e "🔑 Ваш SSH приватный ключ: ${YELLOW}$KEY_FILE${GREEN}") "
+  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " $(echo -e "📂 Используйте ключ для подключения:") "
+  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " $(echo -e "${YELLOW}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${GREEN}") "
+  printf "${GREEN}#%-*s#\n" $((BOX_WIDTH - 2)) " ⚠️ Рекомендуется перезагрузить VPS. "
+  echo -e "${GREEN}$(printf '%*s\n' "$BOX_WIDTH" '' | tr ' ' '#')${RESET}"
 }
 
 main "$@"
