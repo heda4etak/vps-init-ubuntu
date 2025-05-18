@@ -24,4 +24,6 @@
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/heda4etak/vps-init-ubuntu/main/setup_vps.sh)
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/heda4etak/vps-init-ubuntu/main/vps-setup.sh)
 
