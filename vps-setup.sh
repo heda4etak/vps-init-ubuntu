@@ -1,9 +1,8 @@
 #!/bin/bash
 
 # VPS Initial Setup Script for Ubuntu 24.04
-# Version 1.1.0
+# Version 1.1.1
 
-# --- Цвета для вывода ---
 RED="\033[31m"
 GREEN="\033[32m"
 YELLOW="\033[33m"
@@ -11,7 +10,6 @@ CYAN="\033[36m"
 BOLD="\033[1m"
 RESET="\033[0m"
 
-# --- Функция проверки sudo ---
 ensure_sudo() {
   if ! sudo -v; then
     echo -e "${RED}Требуются права суперпользователя (sudo). Запустите скрипт с sudo или настройте sudoers.${RESET}"
@@ -19,7 +17,6 @@ ensure_sudo() {
   fi
 }
 
-# --- Баннер ---
 print_banner() {
   clear
   cat << "EOF"
@@ -36,7 +33,6 @@ EOF
   echo -e "${YELLOW}${BOLD}                      by Heda4etak - 2025${RESET}\n"
 }
 
-# --- Функция проверки занятости порта ---
 check_port() {
   local port="$1"
   if sudo ss -tln | grep -q ":${port} "; then
@@ -49,7 +45,9 @@ main() {
   ensure_sudo
   print_banner
 
-  # 1. Настройка SSH-порта
+  echo -e "${GREEN}Обновление пакетов...${RESET}"
+  sudo apt update && sudo apt upgrade -y
+
   while true; do
     read -rp "Введите новый порт для SSH (например, 2222): " SSH_PORT
     if ! [[ "$SSH_PORT" =~ ^[0-9]+$ ]] || [ "$SSH_PORT" -lt 1 ] || [ "$SSH_PORT" -gt 65535 ]; then
@@ -65,7 +63,6 @@ main() {
     break
   done
 
-  # 2. Ввод имени SSH-ключа
   read -rp "Введите имя SSH-ключа (без пути, например: id_rsa_myvps): " KEY_NAME
   if [[ -z "$KEY_NAME" ]]; then
     echo -e "${YELLOW}Имя ключа не может быть пустым.${RESET}"
@@ -84,14 +81,12 @@ main() {
     ssh-keygen -t rsa -b 4096 -N "" -f "$KEY_FILE"
   fi
 
-  # Копируем публичный ключ в authorized_keys root-пользователя
   sudo mkdir -p /root/.ssh
   sudo touch /root/.ssh/authorized_keys
   sudo chmod 600 /root/.ssh/authorized_keys
   PUB_KEY_CONTENT=$(cat "$KEY_FILE.pub")
   sudo grep -qxF "$PUB_KEY_CONTENT" /root/.ssh/authorized_keys || sudo bash -c "echo '$PUB_KEY_CONTENT' >> /root/.ssh/authorized_keys"
 
-  # 3. Настройка sshd_config
   echo -e "${GREEN}Настройка SSH...${RESET}"
   sudo sed -i "/^Port /d" /etc/ssh/sshd_config
   echo "Port $SSH_PORT" | sudo tee -a /etc/ssh/sshd_config
@@ -107,7 +102,6 @@ main() {
 
   sudo systemctl restart sshd
 
-  # 4. Установка XanMod и включение BBR3
   echo -e "${GREEN}Установка XanMod ядра с BBR3...${RESET}"
   echo 'deb http://deb.xanmod.org releases main' | sudo tee /etc/apt/sources.list.d/xanmod-kernel.list
   sudo apt install -y gpg wget gnupg
@@ -126,7 +120,6 @@ net.ipv4.tcp_congestion_control=bbr
 EOF
   sudo sysctl --system
 
-  # 5. Настройка UFW
   echo -e "${GREEN}Установка и настройка UFW...${RESET}"
   sudo apt install -y ufw
   sudo ufw default deny incoming
@@ -143,7 +136,6 @@ EOF
   echo -e "${CYAN}Перезапуск SSH...${RESET}"
   sudo systemctl restart sshd
 
-  # Финал
   echo -e "${GREEN}✅ Настройка завершена.${RESET}"
   echo -e "${CYAN}🔑 Ваш SSH приватный ключ: ${YELLOW}$KEY_FILE${RESET}"
   echo -e "${CYAN}📂 Используйте ключ для подключения:${RESET}"
