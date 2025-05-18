@@ -1,23 +1,28 @@
 #!/bin/bash
-clear
 
-# Цвета
+# VPS Initial Setup Script for Ubuntu 24.04
+# Version 1.1.0
+
+# --- Цвета для вывода ---
+RED="\033[31m"
 GREEN="\033[32m"
 YELLOW="\033[33m"
-RED="\033[31m"
 CYAN="\033[36m"
-NC="\033[0m"
+BOLD="\033[1m"
+RESET="\033[0m"
 
-main() {
-  # Проверка sudo
+# --- Функция проверки sudo ---
+ensure_sudo() {
   if ! sudo -v; then
-      echo -e "${RED}Требуются права суперпользователя (sudo). Запустите скрипт с sudo.${NC}"
-      exit 1
+    echo -e "${RED}Требуются права суперпользователя (sudo). Запустите скрипт с sudo или настройте sudoers.${RESET}"
+    exit 1
   fi
+}
 
-  # Баннер
+# --- Баннер ---
+print_banner() {
+  clear
   cat << "EOF"
-
 
 ██╗   ██╗██████╗ ███████╗      ███████╗███████╗████████╗██╗   ██╗██████╗ 
 ██║   ██║██╔══██╗██╔════╝      ██╔════╝██╔════╝╚══██╔══╝██║   ██║██╔══██╗
@@ -25,60 +30,61 @@ main() {
 ╚██╗ ██╔╝██╔═══╝ ╚════██║╚════╝╚════██║██╔══╝     ██║   ██║   ██║██╔═══╝ 
  ╚████╔╝ ██║     ███████║      ███████║███████╗   ██║   ╚██████╔╝██║     
   ╚═══╝  ╚═╝     ╚══════╝      ╚══════╝╚══════╝   ╚═╝    ╚═════╝ ╚═╝     
-                                                                           
-
-                                                 
-    VPS Initial Setup Script for Ubuntu 24.04
 
 EOF
+  echo -e "${CYAN}${BOLD}          VPS Initial Setup Script for Ubuntu 24.04${RESET}"
+  echo -e "${YELLOW}${BOLD}                      by Heda4etak - 2025${RESET}\n"
+}
 
-  # Ввод порта и проверка
-  read -p "Введите новый порт для SSH (например, 2222): " SSH_PORT
+# --- Функция проверки занятости порта ---
+check_port() {
+  local port="$1"
+  if sudo ss -tln | grep -q ":${port} "; then
+    echo -e "${YELLOW}Порт ${port} уже занят. Выберите другой.${RESET}"
+    exit 1
+  fi
+}
+
+main() {
+  ensure_sudo
+  print_banner
+
+  # 1. Настройка SSH-порта
+  read -rp "Введите новый порт для SSH (например, 2222): " SSH_PORT
   if ! [[ "$SSH_PORT" =~ ^[0-9]+$ ]] || [ "$SSH_PORT" -lt 1 ] || [ "$SSH_PORT" -gt 65535 ]; then
-      echo -e "${YELLOW}Неверный порт.${NC}"
-      exit 1
+    echo -e "${YELLOW}Неверный порт.${RESET}"
+    exit 1
   fi
+  check_port "$SSH_PORT"
 
-  if sudo ss -tln | grep -q ":$SSH_PORT "; then
-      echo -e "${YELLOW}Порт $SSH_PORT уже занят.${NC}"
-      exit 1
-  fi
-
-  # Ввод имени ключа
-  read -p "Введите имя SSH-ключа (без пути, например: id_rsa_myvps): " KEY_NAME
+  # 2. Ввод имени SSH-ключа
+  read -rp "Введите имя SSH-ключа (без пути, например: id_rsa_myvps): " KEY_NAME
   if [[ -z "$KEY_NAME" ]]; then
-      echo -e "${YELLOW}Имя ключа не может быть пустым.${NC}"
-      exit 1
+    echo -e "${YELLOW}Имя ключа не может быть пустым.${RESET}"
+    exit 1
   fi
 
   SSH_DIR="$HOME/.ssh"
   KEY_FILE="$SSH_DIR/$KEY_NAME"
 
-  mkdir -p "$SSH_DIR"
-  chmod 700 "$SSH_DIR"
+  mkdir -p "$SSH_DIR" && chmod 700 "$SSH_DIR"
 
   if [ -f "$KEY_FILE" ]; then
-      echo -e "${YELLOW}SSH ключ уже существует: $KEY_FILE${NC}"
+    echo -e "${YELLOW}SSH ключ уже существует: $KEY_FILE${RESET}"
   else
-      echo -e "${GREEN}Генерация SSH ключа...${NC}"
-      ssh-keygen -t rsa -b 4096 -N "" -f "$KEY_FILE"
-      if [ $? -ne 0 ]; then
-          echo -e "${RED}Ошибка генерации SSH ключа.${NC}"
-          exit 1
-      fi
+    echo -e "${GREEN}Генерация SSH ключа...${RESET}"
+    ssh-keygen -t rsa -b 4096 -N "" -f "$KEY_FILE"
   fi
 
-  # Добавление публичного ключа в root authorized_keys
+  # Копируем публичный ключ в authorized_keys root-пользователя
   sudo mkdir -p /root/.ssh
   sudo touch /root/.ssh/authorized_keys
   sudo chmod 600 /root/.ssh/authorized_keys
   PUB_KEY_CONTENT=$(cat "$KEY_FILE.pub")
-  if ! sudo grep -qxF "$PUB_KEY_CONTENT" /root/.ssh/authorized_keys; then
-      echo "$PUB_KEY_CONTENT" | sudo tee -a /root/.ssh/authorized_keys > /dev/null
-  fi
+  sudo grep -qxF "$PUB_KEY_CONTENT" /root/.ssh/authorized_keys || sudo bash -c "echo '$PUB_KEY_CONTENT' >> /root/.ssh/authorized_keys"
 
-  # Настройка sshd_config
-  echo -e "${GREEN}Настройка SSH...${NC}"
+  # 3. Настройка sshd_config
+  echo -e "${GREEN}Настройка SSH...${RESET}"
   sudo sed -i "/^Port /d" /etc/ssh/sshd_config
   echo "Port $SSH_PORT" | sudo tee -a /etc/ssh/sshd_config
 
@@ -91,43 +97,42 @@ EOF
   sudo sed -i "/^PermitRootLogin /d" /etc/ssh/sshd_config
   echo "PermitRootLogin prohibit-password" | sudo tee -a /etc/ssh/sshd_config
 
-  # Установка XanMod ядра и ключа
-  echo -e "${GREEN}Установка XanMod ядра с BBR3...${NC}"
+  sudo systemctl restart sshd
+
+  # 4. Установка XanMod и включение BBR3
+  echo -e "${GREEN}Установка XanMod ядра с BBR3...${RESET}"
   echo 'deb http://deb.xanmod.org releases main' | sudo tee /etc/apt/sources.list.d/xanmod-kernel.list
   wget -qO - https://dl.xanmod.org/gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/xanmod.gpg
+  sudo apt update && sudo apt install -y linux-xanmod-x64v4 || { echo -e "${RED}Ошибка установки XanMod${RESET}"; exit 1; }
 
-  sudo apt update || { echo -e "${RED}Ошибка обновления списков пакетов.${NC}"; exit 1; }
-  sudo apt install -y linux-xanmod-x64v4 || { echo -e "${RED}Ошибка установки XanMod ядра.${NC}"; exit 1; }
-
-  # Включение BBR через sysctl.d
-  echo -e "${GREEN}Включение BBR...${NC}"
+  echo -e "${GREEN}Включение BBR...${RESET}"
   sudo tee /etc/sysctl.d/99-bbr.conf > /dev/null <<EOF
 net.core.default_qdisc=fq
 net.ipv4.tcp_congestion_control=bbr
 EOF
   sudo sysctl --system
 
-  # Настройка UFW
-  echo -e "${GREEN}Установка и настройка UFW...${NC}"
+  # 5. Настройка UFW
+  echo -e "${GREEN}Установка и настройка UFW...${RESET}"
   sudo apt install -y ufw
   sudo ufw default deny incoming
   sudo ufw default allow outgoing
   sudo ufw allow "$SSH_PORT"/tcp
   sudo ufw allow 80/tcp
   sudo ufw allow 443/tcp
-
   if ! sudo ufw status | grep -q "Status: active"; then
-      sudo ufw --force enable
+    sudo ufw --force enable
   fi
 
-  echo -e "${CYAN}Перезапуск SSH...${NC}"
-  sudo systemctl restart ssh
+  echo -e "${CYAN}Перезапуск SSH...${RESET}"
+  sudo systemctl.restart sshd
 
-  echo -e "${GREEN}✅ Настройка завершена.${NC}"
-  echo -e "${CYAN}🔑 Ваш SSH приватный ключ: ${YELLOW}$KEY_FILE${NC}"
-  echo -e "${CYAN}📂 Используйте ключ для подключения:${NC}"
-  echo -e "${YELLOW}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${NC}"
-  echo -e "${GREEN}⚠️ Рекомендуется перезагрузить VPS для загрузки нового ядра и применения настроек.${NC}"
+  # Финал
+  echo -e "${GREEN}✅ Настройка завершена.${RESET}"
+  echo -e "${CYAN}🔑 Ваш SSH приватный ключ: ${YELLOW}$KEY_FILE${RESET}"
+  echo -e "${CYAN}📂 Используйте ключ для подключения:${RESET}"
+  echo -e "${YELLOW}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${RESET}"
+  echo -e "${GREEN}⚠️ Рекомендуется перезагрузить VPS для загрузки нового ядра.${RESET}"
 }
 
 main "$@"
