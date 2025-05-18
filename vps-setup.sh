@@ -136,10 +136,10 @@ main() {
   END_TIME=$(date +%s)
   RUNTIME=$((END_TIME - START_TIME))
 
-  echo -e "\n -✅ ${GREEN}Настройка завершена за ${RUNTIME} секунд.${RESET}"
-  echo -e " - 🔑 ${YELLOW}SSH приватный ключ:${RESET} ${GREEN}$KEY_FILE${RESET}"
-  echo -e " - 📂 ${YELLOW}Используйте:${RESET}${CYAN}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${RESET}"
-  echo -e " - ⚠️ ${RED}Рекомендуется перезагрузить VPS.${RESET}\n"
+  echo -e "\n- ✅ ${GREEN}Настройка завершена за ${RUNTIME} секунд.${RESET}"
+echo -e "- 🔑 ${YELLOW}SSH приватный ключ:${RESET} ${GREEN}$KEY_FILE${RESET}"
+echo -e "- 📂 ${YELLOW}Используйте:${RESET} ${CYAN}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${RESET}"
+echo -e "- ⚠️ ${RED}Рекомендуется перезагрузить VPS.${RESET}\n"
 }
 
 main "$@"
