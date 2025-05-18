@@ -110,7 +110,7 @@ main() {
   # 4. Установка XanMod и включение BBR3
   echo -e "${GREEN}Установка XanMod ядра с BBR3...${RESET}"
   echo 'deb http://deb.xanmod.org releases main' | sudo tee /etc/apt/sources.list.d/xanmod-kernel.list
-  sudo apt install -y gpg
+  sudo apt install -y gpg wget gnupg
   if wget -qO - https://dl.xanmod.org/gpg.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/xanmod.gpg > /dev/null; then
     echo -e "${GREEN}Ключ XanMod добавлен.${RESET}"
   else
@@ -134,6 +134,8 @@ EOF
   sudo ufw allow "$SSH_PORT"/tcp
   sudo ufw allow 80/tcp
   sudo ufw allow 443/tcp
+  echo -e "${YELLOW}⚠️ Убедитесь, что SSH-порт $SSH_PORT открыт в UFW перед перезапуском SSH.${RESET}"
+  sleep 3
   if ! sudo ufw status | grep -q "Status: active"; then
     sudo ufw --force enable
   fi
