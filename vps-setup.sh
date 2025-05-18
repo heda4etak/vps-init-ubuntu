@@ -44,11 +44,10 @@ check_port() {
 main() {
   ensure_sudo
 
+  print_banner
   echo -e "${GREEN}Обновление пакетов...${RESET}"
   sudo apt update && sudo apt upgrade -y
   sleep 2
-  clear
-
   print_banner
 
   while true; do
