@@ -110,7 +110,13 @@ main() {
   # 4. Установка XanMod и включение BBR3
   echo -e "${GREEN}Установка XanMod ядра с BBR3...${RESET}"
   echo 'deb http://deb.xanmod.org releases main' | sudo tee /etc/apt/sources.list.d/xanmod-kernel.list
-  wget -qO - https://dl.xanmod.org/gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/xanmod.gpg
+  sudo apt install -y gpg
+  if wget -qO - https://dl.xanmod.org/gpg.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/xanmod.gpg > /dev/null; then
+    echo -e "${GREEN}Ключ XanMod добавлен.${RESET}"
+  else
+    echo -e "${RED}❌ Ошибка при добавлении GPG ключа XanMod.${RESET}"
+    exit 1
+  fi
   sudo apt update && sudo apt install -y linux-xanmod-x64v4 || { echo -e "${RED}Ошибка установки XanMod${RESET}"; exit 1; }
 
   echo -e "${GREEN}Включение BBR...${RESET}"
