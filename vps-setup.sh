@@ -137,15 +137,13 @@ main() {
   RUNTIME=$((END_TIME - START_TIME))
 
   BOX_WIDTH=74
-  LINE=$(printf '%*s' "$BOX_WIDTH" '' | tr ' ' '#')
-
-  echo -e "${GREEN}${LINE}${RESET}"
-  printf "${GREEN}# %-*s #\n" $((BOX_WIDTH - 4)) "✅ Настройка завершена за ${RUNTIME} секунд."
-  printf "${GREEN}# %-*s #\n" $((BOX_WIDTH - 4)) "🔑 SSH приватный ключ: ${YELLOW}$KEY_FILE${GREEN}"
-  printf "${GREEN}# %-*s #\n" $((BOX_WIDTH - 4)) "📂 Используйте:"
-  printf "${GREEN}# %-*s #\n" $((BOX_WIDTH - 4)) "${YELLOW}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${GREEN}"
-  printf "${GREEN}# %-*s #\n" $((BOX_WIDTH - 4)) "⚠️ Рекомендуется перезагрузить VPS"
-  echo -e "${GREEN}${LINE}${RESET}"
+echo -e "${GREEN}$(printf '%*s\n' "$BOX_WIDTH" '' | tr ' ' '#')${RESET}"
+printf "${GREEN}#%*s#\n" $((BOX_WIDTH - 2)) " ✅ Настройка завершена за ${RUNTIME} секунд."
+printf "${GREEN}# ${RESET}🔑 SSH приватный ключ: ${YELLOW}$KEY_FILE${RESET}${GREEN} %*s#\n" $((BOX_WIDTH - 28)) ""
+printf "${GREEN}#%*s#\n" $((BOX_WIDTH - 2)) " 📂 Используйте команду для подключения:"
+printf "${GREEN}# ${RESET}${YELLOW}ssh -i $KEY_FILE root@<IP> -p $SSH_PORT${RESET}${GREEN} %*s#\n" $((BOX_WIDTH - 44)) ""
+printf "${GREEN}#%*s#\n" $((BOX_WIDTH - 2)) " ⚠️ Рекомендуется перезагрузить VPS."
+echo -e "${GREEN}$(printf '%*s\n' "$BOX_WIDTH" '' | tr ' ' '#')${RESET}"
 }
 
 main "$@"
