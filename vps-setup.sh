@@ -119,11 +119,6 @@ main() {
   sudo ufw allow 80/tcp
   sudo ufw allow 443/tcp
 
-  if ! sudo ufw status | grep -q "Status: active"; then
-    echo -e "${YELLOW}⚠️  Включение UFW...${RESET}"
-    sudo ufw --force enable
-  fi
-
   END_TIME=$(date +%s)
   RUNTIME=$((END_TIME - START_TIME))
 
