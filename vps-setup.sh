@@ -124,15 +124,6 @@ main() {
     sudo ufw --force enable
   fi
 
-  echo -e "${CYAN}Перезапуск SSH...${RESET}"
-  sudo systemctl restart sshd
-
-  sleep 1
-  if ! sudo systemctl is-active sshd >/dev/null; then
-    echo -e "${RED}Ошибка: SSH демон не запущен. Проверьте конфигурацию вручную.${RESET}"
-    exit 1
-  fi
-
   END_TIME=$(date +%s)
   RUNTIME=$((END_TIME - START_TIME))
 
